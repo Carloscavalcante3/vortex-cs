@@ -9,17 +9,33 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, Bell, UserCog, Key, Bot, MessageSquare } from "lucide-react";
+import { Save, Bell, UserCog, Key, Bot, MessageSquare, Check, X } from "lucide-react";
 import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedElement } from "@/components/ui/animated-element";
 import { motion } from "framer-motion";
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setSaving(true);
+    
+    try {
+      // Simula uma operação de salvamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSaved(true);
+      
+      // Reset o estado de "salvo" após 2 segundos
+      setTimeout(() => {
+        setSaved(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Erro ao salvar configurações:", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -107,9 +123,18 @@ export default function SettingsPage() {
                   </div>
                   
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button onClick={handleSave}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {saved ? "Salvo!" : "Salvar Alterações"}
+                    <Button onClick={handleSave} disabled={saving}>
+                      {saving ? (
+                        <>
+                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                          <span>Salvando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          <span>{saved ? "Salvo!" : "Salvar Alterações"}</span>
+                        </>
+                      )}
                     </Button>
                   </motion.div>
                 </CardContent>
@@ -168,9 +193,18 @@ export default function SettingsPage() {
                   </div>
                   
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button onClick={handleSave}>
-                      <Bell className="h-4 w-4 mr-2" />
-                      {saved ? "Salvo!" : "Salvar Preferências"}
+                    <Button onClick={handleSave} disabled={saving}>
+                      {saving ? (
+                        <>
+                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                          <span>Salvando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="h-4 w-4 mr-2" />
+                          <span>{saved ? "Salvo!" : "Salvar Preferências"}</span>
+                        </>
+                      )}
                     </Button>
                   </motion.div>
                 </CardContent>
@@ -280,9 +314,18 @@ export default function SettingsPage() {
                   </div>
                   
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button onClick={handleSave}>
-                      <Bot className="h-4 w-4 mr-2" />
-                      {saved ? "Salvo!" : "Salvar Configurações de IA"}
+                    <Button onClick={handleSave} disabled={saving}>
+                      {saving ? (
+                        <>
+                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                          <span>Salvando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="h-4 w-4 mr-2" />
+                          <span>{saved ? "Salvo!" : "Salvar Configurações de IA"}</span>
+                        </>
+                      )}
                     </Button>
                   </motion.div>
                 </CardContent>
@@ -390,6 +433,24 @@ function NotificationToggle({ defaultChecked = false }) {
 }
 
 function TeamMemberCard({ name, email, role }: { name: string; email: string; role: string }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedRole, setEditedRole] = useState(role);
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = () => {
+    // Aqui você implementaria a lógica para salvar as alterações
+    console.log("Salvando alterações:", { name, email, role: editedRole });
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedRole(role);
+    setIsEditing(false);
+  };
+
   return (
     <motion.div 
       className="flex justify-between items-center p-3 border rounded-md"
@@ -404,11 +465,37 @@ function TeamMemberCard({ name, email, role }: { name: string; email: string; ro
         <p className="text-sm text-muted-foreground">{email}</p>
       </div>
       <div className="flex items-center gap-3">
-        <Badge variant="secondary">{role}</Badge>
-        <Button variant="ghost" size="icon">
-          <UserCog className="h-4 w-4" />
-          <span className="sr-only">Editar</span>
-        </Button>
+        {isEditing ? (
+          <>
+            <select
+              value={editedRole}
+              onChange={(e) => setEditedRole(e.target.value)}
+              className="text-sm border rounded px-2 py-1"
+            >
+              <option value="Admin">Admin</option>
+              <option value="Editor">Editor</option>
+              <option value="Viewer">Viewer</option>
+            </select>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" onClick={handleSaveEdit}>
+                <Check className="h-4 w-4 text-green-600" />
+                <span className="sr-only">Salvar</span>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 text-red-600" />
+                <span className="sr-only">Cancelar</span>
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <Badge variant="secondary">{role}</Badge>
+            <Button variant="ghost" size="icon" onClick={handleEditClick}>
+              <UserCog className="h-4 w-4" />
+              <span className="sr-only">Editar</span>
+            </Button>
+          </>
+        )}
       </div>
     </motion.div>
   );

@@ -9,13 +9,12 @@ import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -25,11 +24,9 @@ import {
   Send, 
   Paperclip, 
   Bot, 
-  User as UserIcon, 
   Building2, 
   Clock, 
   Check,
-  X,
   UserRound,
   RefreshCw,
   AlertCircle,
@@ -38,11 +35,9 @@ import {
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
-// Importações dos dados mockados
 import {
   mockConversations,
   mockMessages,
-  mockAttachments,
   MockConversation,
   MockMessage,
   MockAttachment,
@@ -63,6 +58,7 @@ export default function ConversationDetailPage() {
   const [conversation, setConversation] = useState<MockConversation | null>(null);
   const [messages, setMessages] = useState<MockMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Carregar dados da conversa
   useEffect(() => {
@@ -157,6 +153,23 @@ export default function ConversationDetailPage() {
         updatedAt: Date.now() 
       };
     });
+  };
+
+  // Função para lidar com anexos
+  const handleAttachment = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Aqui você pode implementar a lógica de upload do arquivo
+    // Por enquanto, vamos apenas mostrar uma mensagem no console
+    console.log("Arquivos selecionados:", files);
+    
+    // Limpar o input após o upload
+    event.target.value = "";
   };
 
   if (loading) {
@@ -331,7 +344,14 @@ export default function ConversationDetailPage() {
             <CardFooter className="border-t p-3">
               {conversation.status === "open" ? (
                 <div className="flex w-full items-center gap-2">
-                  <Button variant="outline" size="icon">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    multiple
+                  />
+                  <Button variant="outline" size="icon" onClick={handleAttachment}>
                     <Paperclip className="h-4 w-4" />
                   </Button>
                   <Input
@@ -384,6 +404,18 @@ function AttachmentItem({ attachmentId }: { attachmentId: string }) {
     return () => clearTimeout(timer);
   }, [attachmentId]);
 
+  const handleDownload = () => {
+    if (!attachment) return;
+    
+    // Em um ambiente real, você usaria a URL real do arquivo
+    // Por enquanto, vamos simular um download
+    console.log("Iniciando download:", attachment.fileName);
+    
+    // Aqui você implementaria a lógica real de download
+    // Por exemplo:
+    // window.open(attachment.url, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="bg-background/50 rounded p-2 flex items-center gap-2">
@@ -392,26 +424,29 @@ function AttachmentItem({ attachmentId }: { attachmentId: string }) {
       </div>
     );
   }
-  
+
   if (!attachment) {
     return (
-      <div className="bg-background/50 rounded p-2 flex items-center gap-2 text-muted-foreground">
-        <AlertCircle className="h-4 w-4" />
-        <span className="text-sm">Anexo não encontrado</span>
+      <div className="bg-destructive/10 text-destructive rounded p-2 text-sm">
+        Anexo não encontrado
       </div>
     );
   }
 
   return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="bg-background/50 rounded p-2 flex items-center gap-2 hover:bg-background transition-colors"
-    >
-      <Download className="h-4 w-4" />
-      <span className="text-sm truncate">{attachment.fileName}</span>
-    </a>
+    <div className="bg-background/50 rounded p-2 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Paperclip className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm">{attachment.fileName}</span>
+        <span className="text-xs text-muted-foreground">
+          ({Math.round(attachment.fileSize / 1024)}KB)
+        </span>
+      </div>
+      <Button variant="ghost" size="icon" onClick={handleDownload}>
+        <Download className="h-4 w-4" />
+        <span className="sr-only">Download</span>
+      </Button>
+    </div>
   );
 }
 
